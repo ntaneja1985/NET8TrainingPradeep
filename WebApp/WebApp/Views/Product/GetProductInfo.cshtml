@@ -1,0 +1,19 @@
+﻿@model ProductViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    <div><label>ProductId: @Model.Id</label></div>
+    <div><label>Product Name: @Model.Name</label></div>
+    <div><label>Product Description: @Model.Description</label></div>
+    <div><label>Product Price: @Model.Price</label></div>
+</body>
+</html>
