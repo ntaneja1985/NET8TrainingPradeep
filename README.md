@@ -197,3 +197,205 @@ public class FirstController:Controller
 - We can use @Model keyword.
 - We can have only 1 Model inside the view. 
 
+# Html Helpers
+- Extension Methods used for generating the HTML code
+- Standard Html Helpers
+```csharp
+ @Html.TextBox("ProductCode")
+```
+- Strongly Typed Helpers
+```csharp
+ @Html.TextBoxFor(x=>x.ProductCode)
+```
+## Binding Form to the Model
+
+```csharp
+<div class="row">
+    <div class="col-lg-6">
+        @using (Html.BeginForm("save", "product", FormMethod.Post))
+        {
+        <div class="form-group">
+            @Html.LabelFor(x=>x.ProductId)
+            @Html.TextBoxFor(x=>x.ProductId,"", new {@class = "form-control"})
+        </div>
+   
+        <div class="form-group">
+            @Html.LabelFor(x=>x.ProductCode)
+            @Html.TextBoxFor(x=>x.ProductCode, "", new {@class = "form-control"})
+        </div>
+         <div class="form-group">
+            @Html.LabelFor(x=>x.ProductName)
+            @Html.TextBoxFor(x=>x.ProductName, "", new {@class = "form-control"})
+        </div>
+         <div class="form-group" >
+            @Html.LabelFor(x=>x.Price)
+            @Html.TextBoxFor(x=>x.Price, "", new {@class = "form-control"})
+        </div>
+        
+        <input class="btn btn-primary btn-success" type="submit" value="Save Product"/>
+        } 
+    </div>
+```
+# Displaying Labels
+- For every label using strongly typed views use this to show label text
+````csharp
+ [DisplayName("Product Id ")]
+        public int? ProductId { get; set; }
+````
+### Boostrap is a CSS framework for designing responsive UI
+- Bootstrap divides screen into 12 columns
+- col-6 for 6 columns data
+- can accomodate different screen sizes: xs,sm,md
+- col-xs-9 (mobile device) col-lg-6(large screen)
+- container, row, col, form-group, form-control, btn
+
+## Templated Helper
+- We can use @Html.EditorForModel()
+- This will automatically design our form based on the properties
+- We will see a screen where all controls are loaded automatically. But it depends on data type
+- We have no control and are completely dependent on model properties
+- Not recommended, though can be used to build a form very quickly
+- If we dont want to create any control automatically, we use ScaffoldColumn as false
+- ![img_22.png](img_22.png)
+
+## Tag Helpers
+- New way of development in .NET Core
+- Not available in traditional .NET
+- Helper methods to generate HTML code
+- Help to embed server side code with html element
+- Easier to read
+- Helps to have html friendly development
+- asp-for is attribute tag helper
+```csharp
+<body class="container">
+<a asp-action="Create" asp-controller="Product" class="btn btn-dark">Go Back</a>
+<form asp-action="SaveProduct" asp-controller="Product" method="post">
+<div class="row">
+    <div class="col-lg-6 col-sm-9">
+        <div class="form-group">
+            <label asp-for="ProductId"></label>
+            <input type="text" asp-for="ProductId" class="form-control"/>
+        </div>
+        <div class="form-group">
+            <label asp-for="ProductCode"></label>
+            <input type="text" asp-for="ProductCode" class="form-control"/>
+        </div>
+        <div class="form-group">
+            <label asp-for="ProductName"></label>
+            <input type="text" asp-for="ProductName" class="form-control"/>
+        </div>
+        <div class="form-group">
+            <label asp-for="Price"></label>
+            <input type="text" asp-for="Price" class="form-control"/>
+        </div>
+        <input type="submit" value="Save Product"/>
+    </div>
+   </form>
+```
+- asp-*
+
+# Boostrap
+# IEnumerable, ICollection, IList(derived class of ICollection to insert,remove)
+- List is derived class of IEnumerable, ICollection and IList
+
+# Using Boostrap
+- We can display items in a card like structure
+- Based on input arguments, controller can display a different view
+```c#
+public IActionResult Summary(int view = 0)
+{
+    if(view == 1)
+    {
+        return View("ProductsView",products);
+    }
+        else return View("CardsView",products);
+}
+```
+![img.png](img.png)
+
+# Partial Views
+- What if we want to reuse the card for other screens
+- Use the concept of partial views
+- View within a view
+- We create that view under the shared folder
+- ![img_1.png](img_1.png)
+- ![img_2.png](img_2.png) 
+- ![img_3.png](img_3.png)
+- We will use partial tag with name of partial view and pass it the model
+- We use a partial view to separate out complex screens into chunks
+- We can pass the model into the partial view
+- Everytime loop runs, it will pass the model to the partial view
+
+# Consistent Layout in Application
+- Use Layout View
+- It is a view shared across by all the views
+- Create it inside the shared folder
+- We use underscore sign just to signify its a shared view. It is a convention
+- ![img_4.png](img_4.png)
+- ![img_5.png](img_5.png)
+- Inside the RenderBody all the other views will be rendered
+- Go to the View and set the Layout to the layout we created
+- ![img_6.png](img_6.png)
+- Now we don't need html, header tags in all the cshtml pages as it is already in Layout View
+- Now all screens will have consistent UI
+- No need to specify Header and Footer in each view
+**- We cant keep specifying Layout in each page
+- Use _ViewStart.cshtml**
+- ![img_7.png](img_7.png)
+- **If we don't specify Layout in cshtml file, it will automatically pick from _ViewStart.html**
+- However, if we set Layout as NULL, no layout will be set for the page, but if no layout is specified, the one in _ViewStart.html is used
+- In Partial Views, we don't have a Layout
+
+# Specifying Navbar
+- Put Navbar in _MyLayout.cshtml
+- ![img_8.png](img_8.png)
+- ![img_9.png](img_9.png)
+- ![img_10.png](img_10.png)
+- asp-route-[id] is a tag helper, it is basically any data we pass to the controller, here id is passed as an argument to controller action method
+- ![img_11.png](img_11.png)
+- We can pass multiple query strings like this
+- We can always create a Menu Partial View and paste the common code inside that,so that our view is not so complicated.
+- ![img_12.png](img_12.png)
+
+# Specifying Dynamic Content
+- We can create dynamic partial views
+- Dynamic partial views in ASP.NET Core are called **ViewComponents**
+- To create a Viewcomponent, we create a separate folder called Custom
+- There are some rules we need to follow
+- Name can be DiscountOfferViewComponent.cs
+- ![img_13.png](img_13.png)
+- Inherits from ViewComponent class
+- We will pass the price of the product to the viewcomponent and on basis it of it, it will display View
+- ![img_14.png](img_14.png)
+- Here DiscountOffer and NoOffer must be in a specific structure
+- ![img_15.png](img_15.png)
+- We can pass arguments/models to the views also inside viewcomponents
+- ![img_16.png](img_16.png)
+- Calling a view component is done like this:
+- Inside the _ViewImports.cshtml add a tag for the namespace of viewcomponent 
+- ![img_17.png](img_17.png)
+- ViewImports has all the namespaces which we dont want to repeat in our views
+- We use Kebab casing: NishantTaneja becomes nishant-taneja
+- ![img_19.png](img_19.png)
+- View Components need to be in shared folder
+- ![img_20.png](img_20.png)
+
+# Steps for creating ViewComponent
+- Create a class that inherits from ViewComponent
+- Add a method Invoke()-->it is predefined
+- This method returns IViewComponentResult
+- For Views, create a folder within Shared Folder
+- Views/Shared/Components/<View_Component_Name>/<ViewName>.cshtml
+- To call the viewcomponent, we need <vc:discount-offer productPrice="@Model.Price"></vc:discount-offer>
+- We can hardcode name of ViewComponent like this
+- ![img_21.png](img_21.png)
+- We need to add a line in _ViewImports.cshtml file to specify the namespace under which the view component is created
+
+- In MVC, structure of folder is very important.
+- If there is no layout specified for a page, MVC checks in ViewStart.cshtml
+- Each layout must have @RenderBody() method
+- We can have nested layouts also
+- **Each layout can have a parent layout**
+- **ViewImports.cshtml file is used for having all the imported namespaces in one place**
+- It gets applied for all the views
+- Partial Views are static, if we want to call the database and do some logic, we need ViewComponents
