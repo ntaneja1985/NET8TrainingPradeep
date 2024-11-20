@@ -1,0 +1,17 @@
+﻿@model IEnumerable<ProductViewModel>
+
+@{
+    Layout = "_MyLayout";
+}
+
+
+<a asp-action="Create" asp-controller="Product" class="btn btn-dark">Go Back</a>
+<div class="row">
+@foreach (var product in Model)
+{
+    <div class="col-lg-4">
+        <partial name="_ProductInfo" model="product"/> 
+    </div>
+}
+</div>
+

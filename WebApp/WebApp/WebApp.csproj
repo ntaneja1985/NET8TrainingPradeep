@@ -10,4 +10,9 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Components\DiscountOffer\DiscountOffer.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\Components\DiscountOffer\NoOffer.cshtml" />
+  </ItemGroup>
+
 </Project>

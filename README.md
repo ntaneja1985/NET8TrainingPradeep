@@ -294,11 +294,8 @@ public class FirstController:Controller
 ```
 - asp-*
 
-# Boostrap
-# IEnumerable, ICollection, IList(derived class of ICollection to insert,remove)
-- List is derived class of IEnumerable, ICollection and IList
 
-# Using Boostrap
+## Using Boostrap
 - We can display items in a card like structure
 - Based on input arguments, controller can display a different view
 ```c#
@@ -311,6 +308,13 @@ public IActionResult Summary(int view = 0)
         else return View("CardsView",products);
 }
 ```
+- IEnumerator, IEnumerable, ICollection, IList, List
+- IEnumerator: has one method to enumerate the next object
+- IEnumerable: can only loop through data and no manipulation of collection, Count the records, GetEnumerator() method
+- ICollection: can do add, remove
+- IList: add, insert, remove, IndexOf (have option to modify collection)
+- List: Add, RemoveRange, InsertAt, Remove
+
 ![img.png](img.png)
 
 # Partial Views
@@ -318,9 +322,28 @@ public IActionResult Summary(int view = 0)
 - Use the concept of partial views
 - View within a view
 - We create that view under the shared folder
-- ![img_1.png](img_1.png)
-- ![img_2.png](img_2.png) 
-- ![img_3.png](img_3.png)
+```csharp
+@foreach (var product in Model)
+{
+<div class="col-lg-4">
+<partial name="_ProductInfo" model="product"/>
+</div>
+}
+
+// Define Partial View
+@model ProductViewModel
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.ProductName</h5>
+        <h6 class="card-subtitle mb-2 text-body-secondary">@Model.Price</h6>
+        <p>Product Code: @Model.ProductCode</p>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+        <a href="#" class="btn btn-warning">View</a>
+
+    </div>
+</div>
+
+```
 - We will use partial tag with name of partial view and pass it the model
 - We use a partial view to separate out complex screens into chunks
 - We can pass the model into the partial view
@@ -330,32 +353,124 @@ public IActionResult Summary(int view = 0)
 - Use Layout View
 - It is a view shared across by all the views
 - Create it inside the shared folder
-- We use underscore sign just to signify its a shared view. It is a convention
-- ![img_4.png](img_4.png)
-- ![img_5.png](img_5.png)
+- Partial view can be loaded into a main view.
+- We use underscore sign just to signify it is a shared view. It is a convention
+```html
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Demo Web App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</head>
+<body class="container">
+<header> My Header </header>
+<div>
+@RenderBody()    
+</div>
+
+<footer>Copyright @@ 2024</footer>
+</body>
+</html>
+```
 - Inside the RenderBody all the other views will be rendered
 - Go to the View and set the Layout to the layout we created
-- ![img_6.png](img_6.png)
+```csharp
+@model IEnumerable<ProductViewModel>
+
+@{
+    Layout = "_MyLayout";
+}
+
+
+<a asp-action="Create" asp-controller="Product" class="btn btn-dark">Go Back</a>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th>Product Id</th>
+        <th>Product Name</th>
+        <th>Product Code</th>
+        <th>Product Price</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.ProductId</td>
+            <td>@item.ProductName</td>
+            <td>@item.ProductCode</td>
+            <td>@item.Price</td>
+        </tr>
+    }
+    </tbody>
+</table>
+```
 - Now we don't need html, header tags in all the cshtml pages as it is already in Layout View
 - Now all screens will have consistent UI
 - No need to specify Header and Footer in each view
 **- We cant keep specifying Layout in each page
 - Use _ViewStart.cshtml**
-- ![img_7.png](img_7.png)
+```csharp
+@{
+    Layout = "_MyLayout";
+}
+
+```
 - **If we don't specify Layout in cshtml file, it will automatically pick from _ViewStart.html**
 - However, if we set Layout as NULL, no layout will be set for the page, but if no layout is specified, the one in _ViewStart.html is used
 - In Partial Views, we don't have a Layout
 
 # Specifying Navbar
 - Put Navbar in _MyLayout.cshtml
-- ![img_8.png](img_8.png)
-- ![img_9.png](img_9.png)
-- ![img_10.png](img_10.png)
+```html
+<body class="container">
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Navbar</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" asp-action="Create" asp-controller="Product">Add Product</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="Summary" asp-controller="Product">Product List</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="Summary" asp-controller="Product" asp-route-view="1">Product List(Cards)</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link disabled" aria-disabled="true">About Us</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<header> My Header </header>
+<div>
+    @RenderBody()
+</div>
+
+<div class="alert alert-warning text-center">
+    <footer>Copyright @@ 2024</footer> 
+</div>
+
+</body>
+```
 - asp-route-[id] is a tag helper, it is basically any data we pass to the controller, here id is passed as an argument to controller action method
-- ![img_11.png](img_11.png)
+```csharp
+<a class="nav-link" asp-action="Summary" asp-controller="Product" asp-route-id = "2" asp-route-view="1">Product List(Cards)</a>
+```
 - We can pass multiple query strings like this
 - We can always create a Menu Partial View and paste the common code inside that,so that our view is not so complicated.
-- ![img_12.png](img_12.png)
+
 
 # Specifying Dynamic Content
 - We can create dynamic partial views
@@ -363,22 +478,75 @@ public IActionResult Summary(int view = 0)
 - To create a Viewcomponent, we create a separate folder called Custom
 - There are some rules we need to follow
 - Name can be DiscountOfferViewComponent.cs
-- ![img_13.png](img_13.png)
+```csharp
+using Microsoft.AspNetCore.Mvc;
+
+namespace WebApp.Custom;
+
+public class DiscountOfferViewComponent: ViewComponent
+{
+    public IViewComponentResult Invoke(decimal productPrice)
+    {
+        //fetch value from db
+        if (productPrice > 1000)
+        {
+            decimal discount = productPrice * 10/100;
+            decimal finalPrice = productPrice - discount;
+            return View("DiscountOffer", finalPrice);
+        }
+        return View("NoOffer");
+    }
+}
+```
 - Inherits from ViewComponent class
 - We will pass the price of the product to the viewcomponent and on basis it of it, it will display View
-- ![img_14.png](img_14.png)
 - Here DiscountOffer and NoOffer must be in a specific structure
-- ![img_15.png](img_15.png)
 - We can pass arguments/models to the views also inside viewcomponents
-- ![img_16.png](img_16.png)
+```csharp
+return View("DiscountOffer", finalPrice);
+```
 - Calling a view component is done like this:
+```csharp
+@model ProductViewModel
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.ProductName</h5>
+        <h6 class="card-subtitle mb-2 text-body-secondary">@Model.Price</h6>
+        <p>Product Code: @Model.ProductCode</p>
+        <vc:discount-offer productprice = "@Model.Price"></vc:discount-offer>
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+        <a href="#" class="btn btn-warning">View More</a>
+           
+    </div>
+</div>
+```
+- Another alternative is this approach where we directly invoke the View Component
+```csharp
+@model ProductViewModel
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.ProductName</h5>
+        <h6 class="card-subtitle mb-2 text-body-secondary">@Model.Price</h6>
+        <p>Product Code: @Model.ProductCode</p>
+        @*<vc:discount-offer productprice = "@Model.Price"></vc:discount-offer>*@
+        <!-- Use the View Component in a View (e.g., Views/Home/Index.cshtml) -->
+        @await Component.InvokeAsync("DiscountOffer", new { productPrice = @Model.Price })
+
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+        <a href="#" class="btn btn-warning">View More</a>
+           
+    </div>
+</div>
+```
 - Inside the _ViewImports.cshtml add a tag for the namespace of viewcomponent 
-- ![img_17.png](img_17.png)
-- ViewImports has all the namespaces which we dont want to repeat in our views
+```csharp
+@using WebApp.Custom
+@addTagHelper *, WebApp
+```
+- ViewImports has all the namespaces which we don't want to repeat in our views
 - We use Kebab casing: NishantTaneja becomes nishant-taneja
-- ![img_19.png](img_19.png)
 - View Components need to be in shared folder
-- ![img_20.png](img_20.png)
+
 
 # Steps for creating ViewComponent
 - Create a class that inherits from ViewComponent
@@ -386,11 +554,15 @@ public IActionResult Summary(int view = 0)
 - This method returns IViewComponentResult
 - For Views, create a folder within Shared Folder
 - Views/Shared/Components/<View_Component_Name>/<ViewName>.cshtml
-- To call the viewcomponent, we need <vc:discount-offer productPrice="@Model.Price"></vc:discount-offer>
+- To call the viewcomponent, we need <vc:discount-offer productPrice="@Model.Price"></vc:discount-offer>. Note the Viewcomponent name is in kebab case
+- Alternatively, we can invoke the view component directly using @await Component.InvokeAsync("VC_Name",model_data_to_be_passed)
 - We can hardcode name of ViewComponent like this
 - ![img_21.png](img_21.png)
 - We need to add a line in _ViewImports.cshtml file to specify the namespace under which the view component is created
-
+```csharp
+@using WebApp.Custom
+@addTagHelper *, WebApp
+```
 - In MVC, structure of folder is very important.
 - If there is no layout specified for a page, MVC checks in ViewStart.cshtml
 - Each layout must have @RenderBody() method

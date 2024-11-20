@@ -47,9 +47,16 @@ namespace WebApp.Controllers
 
         [HttpGet]
         [Route("product-list")]
-        public IActionResult Summary(int id)
+        public IActionResult Summary(int view = 0)
         {
-            return View("ProductList", products);
+            if (view != 0)
+            {
+                return View("ProductsCard",products);
+            }
+            else
+            {
+                return View("ProductList", products);
+            }
         }
 
 

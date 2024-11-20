@@ -1,0 +1,15 @@
+﻿@model ProductViewModel
+<div class="card" style="width: 18rem;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.ProductName</h5>
+        <h6 class="card-subtitle mb-2 text-body-secondary">@Model.Price</h6>
+        <p>Product Code: @Model.ProductCode</p>
+        @*<vc:discount-offer productprice = "@Model.Price"></vc:discount-offer>*@
+        <!-- Use the View Component in a View (e.g., Views/Home/Index.cshtml) -->
+        @await Component.InvokeAsync("DiscountOffer", new { productPrice = @Model.Price })
+
+        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+        <a href="#" class="btn btn-warning">View More</a>
+           
+    </div>
+</div>
