@@ -40,9 +40,21 @@ namespace WebApp.Controllers
         [HttpPost]
         public IActionResult SaveProduct(ProductViewModel productViewModel)
         {
-            //save in db
-            products.Add(productViewModel);
-            return RedirectToAction("Summary");
+            if (!string.IsNullOrEmpty(productViewModel.ProductName) && DuplicateProduct(productViewModel.ProductName))
+            {
+                ModelState.AddModelError("ProductName", "Product Name already exists");
+            }
+            if (ModelState.IsValid)
+            {
+                //save in db
+                products.Add(productViewModel);
+                return RedirectToAction("Summary");
+            }
+            else
+            {
+                return View("CreateV1");
+            }
+            
         }
 
         [HttpGet]
@@ -58,6 +70,16 @@ namespace WebApp.Controllers
                 return View("ProductList", products);
             }
         }
+
+        #region PrivateMethods
+        private bool DuplicateProduct(string productName)
+        {
+            //check in db
+            var isExist = products.Where(x => x.ProductName.ToLower() == productName.ToLower()).Any();
+            return isExist;
+        }
+
+        #endregion
 
 
     }

@@ -557,7 +557,7 @@ return View("DiscountOffer", finalPrice);
 - To call the viewcomponent, we need <vc:discount-offer productPrice="@Model.Price"></vc:discount-offer>. Note the Viewcomponent name is in kebab case
 - Alternatively, we can invoke the view component directly using @await Component.InvokeAsync("VC_Name",model_data_to_be_passed)
 - We can hardcode name of ViewComponent like this
-- ![img_21.png](img_21.png)
+
 - We need to add a line in _ViewImports.cshtml file to specify the namespace under which the view component is created
 ```csharp
 @using WebApp.Custom
@@ -571,3 +571,159 @@ return View("DiscountOffer", finalPrice);
 - **ViewImports.cshtml file is used for having all the imported namespaces in one place**
 - It gets applied for all the views
 - Partial Views are static, if we want to call the database and do some logic, we need ViewComponents
+
+## Custom Tag Helpers
+- Create a class: Custom_Class_NameTagHelper
+- Inherit from Tag Helper
+- Override the method Process and write logic
+- Provide the attribute to the class if any other name is expected
+- Add a line in _ViewImport.cshtml
+  @addTagHelper *,WebApp
+- It will use kebab casing
+```c#
+using Microsoft.AspNetCore.Razor.TagHelpers;
+
+namespace WebApp.Custom
+{
+    [HtmlTargetElement("custom")]
+    public class MyCustomTagHelper: TagHelper
+    {
+        public string Message { get; set; }
+        public override void Process(TagHelperContext context, TagHelperOutput output)
+        {
+            output.Content.SetHtmlContent($"<div class='alert alert-warning'>{Message}</div>");
+        }
+    }
+}
+
+
+```
+- Use a Tag Helper like this
+```html
+ <custom message="this is nishant"></custom>
+     <custom message="here here"></custom>
+```
+
+- Use Strongly Typed Models
+- To use Strongly Typed Models in custom Tag Helper add this property
+```c#
+public ModelExpression ProductName { get; set; }
+
+//Modify code as follows
+ output.Content.SetHtmlContent($"<div class='alert alert-warning'>{Message}-{ProductName.Model}</div>");
+
+ //Use it like this
+ <custom message="this is nishant" product-name="ProductName"></custom>
+
+```
+
+- TO get input from user and modify the html and display output use this
+- Here we are taking comma separated values and displaying them in a list
+```c#
+public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
+{
+    output.TagName = "ul";
+    var existingContent = await output.GetChildContentAsync();
+    var existingData = existingContent.GetContent();
+    var names = existingData.Split(',', StringSplitOptions.RemoveEmptyEntries);
+    foreach(var item in names)
+    {
+        output.Content.AppendHtml($"<li>{item}</li>");
+    }
+    //return base.ProcessAsync(context, output);
+}
+
+//Use like this
+ <custom>nishant,nalin,susan,victor</custom>
+
+
+```
+
+## Validation
+- To protect the form from passing invalid data to server
+- Client Side and Server Side Validation
+- Types of Validation
+- Explicit Model Validation
+- Data Annotation: Required, Range, MinLength, MaxLength, RegularExpression,EmailAddress,Phone, Url
+- Below is the traditional way of doing validations
+```c#
+ public IActionResult SaveProduct(ProductViewModel productViewModel)
+ {
+     if(string.IsNullOrEmpty(productViewModel.ProductCode))
+     {
+         ModelState.AddModelError("ProductCode", "Product Code is required");
+     }
+     if (ModelState.IsValid)
+     {
+         //save in db
+         products.Add(productViewModel);
+         return RedirectToAction("Summary");
+     }
+     else
+     {
+         return View("CreateV1");
+     }
+     
+ }
+
+
+ //Use it like this
+ <span asp-validation-for="ProductCode" class="text-danger"></span>
+
+```
+- Another way of doing validations is using annotations and we can provide custom error messages
+```c#
+  [Required(ErrorMessage = "Product name is Mandatory")]
+  [RegularExpression("^[a-zA-Z0-9 ]+$",ErrorMessage ="Product Name is invalid")]
+  [Range(1,double.MaxValue)]
+```
+- We can display all error messages as a list like this
+```html
+ <div asp-validation-summary="All" class="text-danger"></div>
+```
+
+## Custom Validation
+
+- We can do custom validation like this by inheriting from ValidationAttribute
+  ```c#
+     public class CodeValidator:ValidationAttribute
+    {
+     public string Character { get; set; }
+     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+     {
+         string code = value as string;
+         if(code != null && !code.StartsWith(Character,StringComparison.OrdinalIgnoreCase))
+         {
+             return new ValidationResult(ErrorMessage);
+         }
+         return ValidationResult.Success;
+     }
+    }
+  ```
+- Use it like this
+```c#
+    [CodeValidator(Character ="P",  ErrorMessage ="Product code is not starting with P")]
+    public string? ProductCode { get; set; }
+```
+
+- All the above validations are server-side validations
+
+## Client Side Validations
+- To perform client side validations in Razor Page, just drag these 3 files from wwwroot into the cshtml page
+- All validations including Model Validations will work client-side.
+```html
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+```
+- These 3 js files are working because all server side validations are moved over to client side using data-val attributes
+- These 3 files do all the magic using data-val attributes
+- However custom validations will not work, to make them work, we will have to plugin all our custom validation logic into the unobtrusive.js file using adapters
+  
+- ![alt text](image.png)
+- ![alt text](image-1.png)  
+- Another way to make this client side validations is to use _ValidationScriptsPartial partial view and we can put it inside any view
+```html
+    <partial name="_ValidationScriptPartial"/>
+```
