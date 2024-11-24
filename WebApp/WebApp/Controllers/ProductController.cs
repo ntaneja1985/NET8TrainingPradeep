@@ -40,6 +40,7 @@ namespace WebApp.Controllers
         [HttpPost]
         public IActionResult SaveProduct(ProductViewModel productViewModel)
         {
+            //Explicit Model Validation
             if (!string.IsNullOrEmpty(productViewModel.ProductName) && DuplicateProduct(productViewModel.ProductName))
             {
                 ModelState.AddModelError("ProductName", "Product Name already exists");

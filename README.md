@@ -727,3 +727,105 @@ public override async Task ProcessAsync(TagHelperContext context, TagHelperOutpu
 ```html
     <partial name="_ValidationScriptPartial"/>
 ```
+- To add our custom validator as a client side validation we need to do this:
+```c#
+     public class CodeValidator:ValidationAttribute, IClientModelValidator
+ {
+     public string Character { get; set; }
+
+     public void AddValidation(ClientModelValidationContext context)
+     {
+         context.Attributes.Add("data-val-codevalidator", ErrorMessage);
+         context.Attributes.Add("data-val-codevalidator-character",Character);
+     }
+
+     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+     {
+         string code = value as string;
+         if(code != null && !code.StartsWith(Character,StringComparison.OrdinalIgnoreCase))
+         {
+             return new ValidationResult(ErrorMessage);
+         }
+         return ValidationResult.Success;
+     }
+ }
+
+```
+- ![alt text](image-2.png)
+- Next step is to create a validation.js file in js folder in wwwroot
+ ```js
+    jQuery.validator.addMethod("codevalidator", function (val, ele, param) {
+    if (val != '' && val.indexOf(param.char) == -1) {
+        return false;
+    } else {
+        return true;
+    }
+    })
+
+    jQuery.validator.unobtrusive.adapters.add("codevalidator", ["char"], function (option) {
+    option.rules['codevalidator'] = { char: option.params.char };
+    option.messages['codevalidator'] = option.message;
+    })
+```
+- Then just include this JS into your page
+```js
+<script src="/js/validation.js"></script>
+```
+- Now the server side validations will work client side but please note the server side logic has to again be written on the client side as well
+- ![alt text](image-3.png)
+
+## Steps to implement custom validator client side
+- Implement the interface IClientModelValidator and implement method AddValidation. 
+- Whatever we need to render in client side, add it here as an attribute
+- In javascript, add a function performing the same validation logic like server side using JQuery.validation.addMethod
+- In JS plugin your custom js validation along with parameters and error messages with unobtrusive.js
+ ```js
+    jQuery.validator.unobtrusive.adapters.add("codevalidator", ["char"], function (option) {
+    option.rules['codevalidator'] = { char: option.params.char };
+    option.messages['codevalidator'] = option.message;
+    })
+```
+## Connecting Application to the Database
+- ADO.Net
+- SqlConnection, SqlCommand, SqlDataReader, SqlDataAdapter
+- ORM(Object Relational Mapping)
+- Helps to do all RDBMS activity with object oriented programming
+- We create a class that acts like database
+- We call them Entity Classes that will act like tables 
+- Inside the entity class, there are properties that will act like columns
+- DbSet<Entity> acts like rows
+- No need to write insert/update queries, this is done by ORM 
+- Different ORMs in market like NHibernate, Dapper, EF Core, EF (Traditional)
+- ORM will map your database tables with C# classes and properties
+- They have APIs to do CRUD operations without writing any scripts
+- ORMs can connect to various DBs like Cosmos DB, MySql, DB2, Sql Server,Postgres SQL
+
+### Types of Data Modeling
+- Code First Approach
+- DB First Approach (Reverse Engineering)
+- In Code First, we will make some classes and map them to the database
+- Nuget Packages: EntityFrameworkCore, EntityFrameworkCore.SqlServer, EntityFrameworkCore.Tools
+
+### Migration Commands
+- Command line to execute and generate SQL Scripts
+- Execute Sql Script in the database
+- Tools > Nuget Package Manager > Package Manager Console
+### Steps in Migration
+- Add-Migration <migration_name>
+- Update-Database
+- Script-Migration
+
+```c#
+public class DemoDbContext:DbContext
+{
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        string connectionString = "Data Source=localhost;Initial Catalog=questponddb;Integrated Security=True";
+        optionsBuilder.UseSqlServer(connectionString);
+        base.OnConfiguring(optionsBuilder);
+    }
+
+    public DbSet<Product> Products { get; set; }
+
+}
+```
