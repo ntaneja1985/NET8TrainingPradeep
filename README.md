@@ -795,7 +795,7 @@ public override async Task ProcessAsync(TagHelperContext context, TagHelperOutpu
 - Inside the entity class, there are properties that will act like columns
 - DbSet<Entity> acts like rows
 - No need to write insert/update queries, this is done by ORM 
-- Different ORMs in market like NHibernate, Dapper, EF Core, EF (Traditional)
+- Different ORMs in market like NHibernate, Dapper,ORMLite, EF Core, EF (Traditional)
 - ORM will map your database tables with C# classes and properties
 - They have APIs to do CRUD operations without writing any scripts
 - ORMs can connect to various DBs like Cosmos DB, MySql, DB2, Sql Server,Postgres SQL
@@ -829,3 +829,146 @@ public class DemoDbContext:DbContext
 
 }
 ```
+- In code-first we write code first in c#, convert it to a script and then update the database.
+- A table called EFMigrationHistory is also generated which tracks all the migrations
+- We have a **navigation property** to get the foreign key relationship with
+```c#
+ namespace DataAccessLayer.Entities
+{
+    [Table("tblProduct")]
+    public class Product
+    {
+        [Key]
+        public int ProductId { get; set; } //int
+        [Column(TypeName ="varchar(200)")]
+        public string ProductCode { get; set; }
+        [StringLength(100)]
+        public string ProductName { get; set; } //nvarchar(MAX) by default
+        public decimal Price { get; set; }
+      
+        public int CategoryId { get; set; }
+
+        //Navigation Property
+        public Category Category { get; set; }
+    }
+}
+
+```
+- Another way is
+```c#
+  [ForeignKey(nameof(Category))]
+ public int CatId { get; set; }
+
+ //Navigation Property
+ public Category Category { get; set; }
+
+```
+
+## Repository Pattern 
+- We cannot directly connect our frontend application to data access layer
+- It will cause tight coupling.
+- We need repository layer
+- According to Martin Fowler, the repository pattern mediates between domain and data mapping layer acting like an in-memory collection of domain object.
+- When we connect to a database we get the result back as rows and columns. We need to map them to domain objects which our application uses.
+- It decouples application from persistent framework like Entity Framework. Provides an abstraction between them.
+- Entity Framework also implements repository pattern since it also maps my database rows and columns to my entity objects.
+- Even Entity Framework also has methods for Add, Remove, Find, Where
+- But even then we need some abstraction because domain objects are complex in nature.
+- Every repository class will have CRUD methods.
+- We need to minimize duplicate code.
+- var products = context.Products.Where(d=>d.ProductId > 0); //Connect to database, generate a script, execute the query, deserialize to List<Products>, close the connection.
+- In old days, ADO.NET used to have lot of code just to do the above.
+- Repository pattern also allows unit testing since we create interfaces. 
+- Repositories give domain objects
+- Our webapp should deal with domain objects not entity objects 
+- Webapp needs DTOs/ViewModels
+- ![alt text](image-5.png)
+- Business Layer ensures we get data in terms of ViewModels, DTOs 
+- Business Layer talks to Repositories
+- Repositories talks to Database (Core Project)
+- context.SaveChanges() gives the rows affected
+- Different ways to do CRUD operations
+```c#
+using DataAccessLayer;
+using DataAccessLayer.Entities;
+using Microsoft.EntityFrameworkCore;
+using Repositories.Abstraction;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Repositories.Implementation
+{
+    public class ProductRepository : IProductRepository
+    {
+        private readonly DemoDbContext _context;
+
+        public ProductRepository()
+        {
+            _context = new DemoDbContext();
+        }
+        public bool Add(Product productToAdd)
+        {
+             _context.Products.Add(productToAdd);
+            //context.SaveChanges gives the rows affected
+            return _context.SaveChanges() > 0; //open connection, generate script, execute script, fetch latest id, insert, close connection
+        }
+
+        public bool Delete(int productId)
+        {
+            //_context.Products.Where(x => x.ProductId == productId).ExecuteDelete();
+            //return _context.SaveChanges() > 0;
+            var productToDelete = _context.Products.FirstOrDefault(p => p.ProductId == productId);
+            _context.Products.Remove(productToDelete);
+            return  _context.SaveChanges() > 0;
+        }
+
+        public IEnumerable<Product> GetAll()
+        {
+            var products = (from prod in  _context.Products
+                            where prod.ProductId > 0 select prod).ToList();
+            return products;
+        }
+
+        public Product GetProductById(int productId)
+        {
+            return _context.Products.FirstOrDefault(x => x.ProductId == productId);
+        }
+
+        public bool Update(Product productToUpdate)
+        {
+            //_context.Products.Update(productToUpdate);
+            //return _context.SaveChanges() > 0;
+            //_context.Products.Where(x=>x.ProductId == productToUpdate.ProductId)
+            //    .ExecuteUpdate(s=>s.SetProperty(p=>p.ProductCode, productToUpdate.ProductCode));
+           ** _context.Entry<Product>(productToUpdate).State = EntityState.Modified;
+            _context.SaveChanges();**
+            return true;
+        }
+    }
+}
+
+
+```
+- **To not lock the table while doing reads, use AsNoTracking**
+- In EF Core, we have _context.Database.BeginTransaction() to start a transaction
+- In catch block we will have rollback
+```c#
+ try
+{
+    _context.Database.BeginTransaction();
+    _context.Products.Add(productToAdd);
+    _context.Database.CommitTransaction();
+    //context.SaveChanges gives the rows affected
+    return _context.SaveChanges() > 0; //open connection, generate script, execute script, fetch latest id, insert, close connection
+}
+catch (Exception ex)
+{
+    _context.Database.RollbackTransaction();
+    return false;
+}
+
+```
+

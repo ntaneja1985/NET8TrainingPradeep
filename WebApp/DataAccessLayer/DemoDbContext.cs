@@ -7,12 +7,13 @@ namespace DataAccessLayer
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            string connectionString = "Data Source=localhost;Initial Catalog=questponddb;Integrated Security=True";
+            string connectionString = "Data Source=localhost;Initial Catalog=questponddb;Integrated Security=True;TrustServerCertificate=True";
             optionsBuilder.UseSqlServer(connectionString);
             base.OnConfiguring(optionsBuilder);
         }
 
         public DbSet<Product> Products { get; set; }
+        public DbSet<Category> Categories { get; set; }
 
     }
 }
