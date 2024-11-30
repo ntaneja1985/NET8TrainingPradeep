@@ -20,9 +20,21 @@ namespace Repositories.Implementation
         }
         public bool Add(Product productToAdd)
         {
-             _context.Products.Add(productToAdd);
-            //context.SaveChanges gives the rows affected
-            return _context.SaveChanges() > 0; //open connection, generate script, execute script, fetch latest id, insert, close connection
+            try
+            {
+                _context.Database.BeginTransaction();
+                _context.Products.Add(productToAdd);
+                _context.Database.CommitTransaction();
+                //context.SaveChanges gives the rows affected
+                return _context.SaveChanges() > 0; //open connection, generate script, execute script, fetch latest id, insert, close connection
+            }
+            catch (Exception ex)
+            {
+                _context.Database.RollbackTransaction();
+                return false;
+            }
+
+            
         }
 
         public bool Delete(int productId)
