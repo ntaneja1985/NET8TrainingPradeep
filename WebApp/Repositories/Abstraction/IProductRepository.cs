@@ -16,5 +16,6 @@ namespace Repositories.Abstraction
         IEnumerable<Product> GetAll();
 
         Product GetProductById(int productId);
+        bool DuplicateCheck(string productName, int productId);
     }
 }

@@ -875,10 +875,10 @@ public class DemoDbContext:DbContext
 - Even Entity Framework also has methods for Add, Remove, Find, Where
 - But even then we need some abstraction because domain objects are complex in nature.
 - Every repository class will have CRUD methods.
-- We need to minimize duplicate code.
+- We need to **minimize duplicate code.**
 - var products = context.Products.Where(d=>d.ProductId > 0); //Connect to database, generate a script, execute the query, deserialize to List<Products>, close the connection.
 - In old days, ADO.NET used to have lot of code just to do the above.
-- Repository pattern also allows unit testing since we create interfaces. 
+- **Repository pattern also allows unit testing** since we create interfaces. 
 - Repositories give domain objects
 - Our webapp should deal with domain objects not entity objects 
 - Webapp needs DTOs/ViewModels
@@ -971,4 +971,8 @@ catch (Exception ex)
 }
 
 ```
+- Repository pattern will minimize duplicate code 
+- We will have separate Business Layer and another project for the Models(ViewModels)
+- Controllers will talk to Business Layer and Business Layer will talk to Repository Layer which in turn talks to Data Access Layer
+
 

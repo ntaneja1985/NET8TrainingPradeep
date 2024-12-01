@@ -15,4 +15,9 @@
     <_ContentIncludedByDefault Remove="Views\Components\DiscountOffer\NoOffer.cshtml" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BusinessLayer\BusinessLayer.csproj" />
+    <ProjectReference Include="..\ViewModels\ViewModels.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -37,6 +37,12 @@ namespace Repositories.Implementation
             
         }
 
+        public bool DuplicateCheck(string productName, int productId)
+        {
+            var isExist = _context.Products.Where(x=>x.ProductName.ToLower() == productName.ToLower() && x.ProductId != productId).Any();
+            return isExist;
+        }
+
         public bool Delete(int productId)
         {
             //_context.Products.Where(x => x.ProductId == productId).ExecuteDelete();

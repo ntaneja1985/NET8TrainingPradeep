@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Repositories.Abstraction
 {
-    internal interface ICategoryRepository
+    public interface ICategoryRepository
     {
         IEnumerable<Category> GetAll();
     }

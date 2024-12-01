@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BusinessLayer.Abstraction;
+using BusinessLayer.Implementation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using ViewModels;
 using WebApp.Models;
 
 namespace WebApp.Controllers
@@ -6,6 +10,15 @@ namespace WebApp.Controllers
     [Route("product")]
     public class ProductController : Controller
     {
+        private readonly IProductBL _productBL;
+        private readonly ICategoryBL _categoryBL;
+
+        public ProductController()
+        {
+            _productBL = new ProductBL();   
+            _categoryBL = new CategoryBL();
+
+        }
         private static List<ProductViewModel> products = new List<ProductViewModel>()
         {
             new ProductViewModel() { Price = 5000, ProductCode = "P002", ProductName = "Bag", ProductId = 101 }
@@ -32,6 +45,8 @@ namespace WebApp.Controllers
         [Route("addProduct")]
         public IActionResult Create()
         {
+         var categories = new SelectList(_categoryBL.GetActiveCategories(),"CategoryId","CategoryName");
+         ViewBag.Categories = categories;
          return View("CreateV1");   
         }
 
@@ -48,11 +63,14 @@ namespace WebApp.Controllers
             if (ModelState.IsValid)
             {
                 //save in db
-                products.Add(productViewModel);
+               // products.Add(productViewModel);
+               _productBL.AddProduct(productViewModel);
                 return RedirectToAction("Summary");
             }
             else
             {
+                var categories = new SelectList(_categoryBL.GetActiveCategories(), "CategoryId", "CategoryName");
+                ViewBag.Categories = categories;
                 return View("CreateV1");
             }
             
@@ -64,11 +82,11 @@ namespace WebApp.Controllers
         {
             if (view != 0)
             {
-                return View("ProductsCard",products);
+                return View("ProductsCard",_productBL.GetAllProducts());
             }
             else
             {
-                return View("ProductList", products);
+                return View("ProductList", _productBL.GetAllProducts());
             }
         }
 
@@ -76,8 +94,9 @@ namespace WebApp.Controllers
         private bool DuplicateProduct(string productName)
         {
             //check in db
-            var isExist = products.Where(x => x.ProductName.ToLower() == productName.ToLower()).Any();
-            return isExist;
+            //var isExist = products.Where(x => x.ProductName.ToLower() == productName.ToLower()).Any();
+            //return isExist;
+            return _productBL.DuplicateCheck(productName, 0);
         }
 
         #endregion

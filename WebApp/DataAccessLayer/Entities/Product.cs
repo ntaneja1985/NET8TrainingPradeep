@@ -12,7 +12,7 @@ namespace DataAccessLayer.Entities
     public class Product
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ProductId { get; set; } //int
         [Column(TypeName ="varchar(200)")]
         public string ProductCode { get; set; }
