@@ -14,9 +14,9 @@ namespace Repositories.Implementation
 
         private readonly DemoDbContext _context;
 
-        public CategoryRepository()
+        public CategoryRepository(DemoDbContext demoDbContext)
         {
-            _context = new DemoDbContext();
+            _context = demoDbContext;
         }
         public IEnumerable<Category> GetAll()
         {

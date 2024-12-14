@@ -1,0 +1,58 @@
+﻿@model ProductViewModel 
+
+@{
+    Layout = "_MyLayout";
+}
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+
+
+<div class="row">
+<form asp-action="SaveProduct" asp-controller="Product" method="post">
+   
+    <div class="col-lg-6 col-sm-9">
+        <div class="form-group">
+            <input type="hidden" asp-for="ProductId"/>
+            <label asp-for="CategoryId"></label>
+            <select class="form-select" asp-items="ViewBag.Categories" asp-for="@Model.CategoryId">
+                <option  value="0">--Select--</option>
+            </select>
+                <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        @* <div class="form-group">
+            <label asp-for="ProductId"></label>
+            <input type="text" asp-for="ProductId" class="form-control" disabled/>
+                <span asp-validation-for="ProductId" class="text-danger"></span>
+        </div> *@
+        <div class="form-group">
+            <label asp-for="ProductCode"></label>
+            <input type="text" asp-for="ProductCode" class="form-control"/>
+            <span asp-validation-for="ProductCode" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ProductName"></label>
+            <input type="text" asp-for="ProductName" class="form-control"/>
+                <span asp-validation-for="ProductName" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Price"></label>
+            <input type="text" asp-for="Price" class="form-control"/>
+                <span asp-validation-for="Price" class="text-danger"></span>
+        </div>
+        <input type="submit" value="Save Product" class="btn btn-success mt-2 mx-1"/>
+        <div asp-validation-summary="All" class="text-danger"></div>
+    </div>
+
+   @*  <custom message="this is nishant" product-name="ProductName"></custom>
+        <custom message="here here" product-name="ProductName"></custom> *@
+        <custom>nishant,nalin,susan,victor</custom>
+        <partial name="_ValidationScriptsPartial"/>
+        <script src="/js/validation.js"></script>
+    
+</form>
+</div>
+

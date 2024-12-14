@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Repositories.Abstraction
 {
-    internal interface IProductRepository
+    public interface IProductRepository
     {
         bool Add(Product productToAdd);
         bool Update(Product productToUpdate); 

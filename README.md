@@ -974,5 +974,20 @@ catch (Exception ex)
 - Repository pattern will minimize duplicate code 
 - We will have separate Business Layer and another project for the Models(ViewModels)
 - Controllers will talk to Business Layer and Business Layer will talk to Repository Layer which in turn talks to Data Access Layer
+- If we click on a Link we cant do a Delete, when we click on a link <a></a> it would do a HttpGet request. To make HttpDelete request, use AJAX
 
 
+## Dependency Injection
+- Instead of creating concrete objects inside class, we should be injecting objects
+- Implements the dependency inversion principle. 
+- We can do method injection or constructor injection or property injection
+- Inversion of control will help to create instances of a class rather than us creating it directly.
+- IOC creates a container called IOC Container.
+- ![alt text](image-6.png)
+- IOC Container gives us an instance of an interface or a class. 
+- Helps to promote loose coupling.
+- In IOC Containers, we register all our requirements like for IProductBL give me ProductBL or for IProductRepo give me ProductRepo.
+- IOC container is also capable of maintaining the **lifetime scope** of the object. 
+- It can help decide how long the ProductBL or ProductRepo object should be in memory.
+- This is done using 3 methods: **AddScoped, AddSingleton, AddTransient**
+- 

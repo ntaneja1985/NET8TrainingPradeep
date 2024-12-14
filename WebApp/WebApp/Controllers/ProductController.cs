@@ -13,10 +13,10 @@ namespace WebApp.Controllers
         private readonly IProductBL _productBL;
         private readonly ICategoryBL _categoryBL;
 
-        public ProductController()
+        public ProductController(IProductBL productBL, ICategoryBL categoryBL)
         {
-            _productBL = new ProductBL();   
-            _categoryBL = new CategoryBL();
+            _productBL = productBL;   
+            _categoryBL = categoryBL;
 
         }
         private static List<ProductViewModel> products = new List<ProductViewModel>()
@@ -62,9 +62,16 @@ namespace WebApp.Controllers
             }
             if (ModelState.IsValid)
             {
+                if(productViewModel.ProductId > 0)
+                {
+                    _productBL.UpdateProduct
+                        (productViewModel);
+                } else
+                { 
                 //save in db
                // products.Add(productViewModel);
                _productBL.AddProduct(productViewModel);
+                }
                 return RedirectToAction("Summary");
             }
             else
@@ -88,6 +95,24 @@ namespace WebApp.Controllers
             {
                 return View("ProductList", _productBL.GetAllProducts());
             }
+        }
+
+        [HttpGet]
+        [Route("delete/{productId}")]
+        public IActionResult DeleteProduct(int productId)
+        {
+            var isDeleted = _productBL.RemoveProduct(productId);
+            return RedirectToAction("Summary", "Product");
+        }
+
+        [HttpGet]
+        [Route("edit/{productId}")]
+        public IActionResult EditProduct(int productId)
+        {
+            var productToEdit = _productBL.GetProductById(productId);
+            var categories = new SelectList(_categoryBL.GetActiveCategories(), "CategoryId", "CategoryName");
+            ViewBag.Categories = categories;
+            return View("Edit",productToEdit);
         }
 
         #region PrivateMethods

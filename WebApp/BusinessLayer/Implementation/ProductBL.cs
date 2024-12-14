@@ -7,16 +7,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ViewModels;
+using Repositories.Abstraction;
 
 namespace BusinessLayer.Implementation
 {
     public class ProductBL : IProductBL
     {
-        private readonly ProductRepository _productRepo;
+        private readonly IProductRepository _productRepo;
 
-        public ProductBL()
+        public ProductBL(IProductRepository productRepository)
         {
-            _productRepo = new ProductRepository();
+            _productRepo = productRepository;
         }
         public bool AddProduct(ProductViewModel product)
         {
@@ -55,7 +56,8 @@ namespace BusinessLayer.Implementation
                 ProductName = productToEdit.ProductName,
                 ProductCode = productToEdit.ProductCode,
                 Price = productToEdit.Price,
-                ProductId = productToEdit.ProductId
+                ProductId = productToEdit.ProductId,
+                CategoryId= productToEdit.CategoryId
             };
         }
 
@@ -71,7 +73,9 @@ namespace BusinessLayer.Implementation
                 ProductName = product.ProductName,
                 ProductCode = product.ProductCode,
                 Price = product.Price.Value,
-                ProductId = product.ProductId.Value
+                ProductId = product.ProductId.Value,
+                CategoryId = product.CategoryId,
+               
             };
             return _productRepo.Update(productToUpdate);
         }

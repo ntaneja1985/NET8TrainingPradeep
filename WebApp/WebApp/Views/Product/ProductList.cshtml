@@ -13,6 +13,7 @@
         <th>Product Name</th>
         <th>Product Code</th>
         <th>Product Price</th>
+            <th>Edit</th>
         <th>Delete</th>
     </tr>
     </thead>
@@ -24,8 +25,11 @@
             <td>@item.ProductName</td>
             <td>@item.ProductCode</td>
             <td>@item.Price</td>
+                <td>
+                    <a asp-action="EditProduct" title="Edit Product" class="btn btn-outline-primary" asp-controller="Product" asp-route-productId="@item.ProductId" onclick="return confirm('Do you wish to edit the product');">Edit</a>
+                </td>
             <td>
-                <a asp-action="DeleteProduct" class="btn btn-danger" asp-controller="Product" asp-route-productId="@item.ProductId">Delete</a>
+                <a asp-action="DeleteProduct" title="Delete Product" class="btn btn-danger" asp-controller="Product" asp-route-productId="@item.ProductId" onclick="return confirm('Do you wish to delete the product');">Delete</a>
             </td>
         </tr>
     }

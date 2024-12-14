@@ -13,9 +13,9 @@ namespace BusinessLayer.Implementation
     public class CategoryBL : ICategoryBL
     {
         private readonly ICategoryRepository _categoryRepo;
-        public CategoryBL()
+        public CategoryBL(ICategoryRepository categoryRepository)
         {
-            _categoryRepo = new CategoryRepository();
+            _categoryRepo = categoryRepository;
         }
         public IEnumerable<CategoryViewModel> GetActiveCategories()
         {

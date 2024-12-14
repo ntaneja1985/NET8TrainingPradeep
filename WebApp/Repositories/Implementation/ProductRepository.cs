@@ -14,9 +14,9 @@ namespace Repositories.Implementation
     {
         private readonly DemoDbContext _context;
 
-        public ProductRepository()
+        public ProductRepository(DemoDbContext context)
         {
-            _context = new DemoDbContext();
+            _context = context;
         }
         public bool Add(Product productToAdd)
         {
