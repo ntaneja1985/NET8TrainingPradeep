@@ -978,10 +978,12 @@ catch (Exception ex)
 
 
 ## Dependency Injection
+- Design Pattern to inject the dependent object rather than create the object inside the class. 
 - Instead of creating concrete objects inside class, we should be injecting objects
 - Implements the dependency inversion principle. 
 - We can do method injection or constructor injection or property injection
 - Inversion of control will help to create instances of a class rather than us creating it directly.
+- IOC transfer the control of object creation to an external source, rather than application code.
 - IOC creates a container called IOC Container.
 - ![alt text](image-6.png)
 - IOC Container gives us an instance of an interface or a class. 
@@ -990,4 +992,100 @@ catch (Exception ex)
 - IOC container is also capable of maintaining the **lifetime scope** of the object. 
 - It can help decide how long the ProductBL or ProductRepo object should be in memory.
 - This is done using 3 methods: **AddScoped, AddSingleton, AddTransient**
+- AddTransient means everytime the controller is looking for a particular object a new object is created for you. 
+```c#
+public ProductController(IProductBL productBL, ICategoryBL categoryBL)
+{
+    _productBL = productBL;   
+    _categoryBL = categoryBL;
+
+}
+
+```
+- We can configure DbContext like this 
+```c#
+ services.AddDbContext<DemoDbContext>(option =>
+ {
+     string connectionString = configuration.GetConnectionString("conn") ?? "";
+     option.UseSqlServer(connectionString);
+ });
+
+     public class DemoDbContext:DbContext
+    {
+        public DemoDbContext(DbContextOptions options):base(options) {
+        }
+       
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                string connectionString = "Data Source=localhost;Initial Catalog=questponddb;Integrated Security=True;TrustServerCertificate=True";
+                optionsBuilder.UseSqlServer(connectionString);
+                base.OnConfiguring(optionsBuilder);
+            }
+        }
+
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Category> Categories { get; set; }
+
+    }
+
+
+```
+- Add Transient: Creates new instance everytime for each request and subsequent request 
+- Add Scoped: Create new instance everytime for each request and share it for subsequent request. It has nothing to do with HTTP request.
+- They determine how an object gets created. 
+- ![alt text](image-7.png)
+- Here for each requirement of ICustomerBL in AddTransient, 2 separate objects are created of CustomerBL
+- For AddScoped, the object is shared. 
+- In Singleton , a single object or single instance is created throughout the project. 
+- For DbContext we should use AddScoped. For the same request we can share the object and avoid creating too many connections.
+- Singleton should not be used as if we make any changes in the object for one user, other users will also have the same updated value which is not correct.
+- Caching and System Settings use Singleton
+- Please note these settings are not user specific they are request specific.
+- If we want to pass some information while object initialization we can do this in IOC Container :
+  ```c#
+    //Class Constructor
+    public CustomerBL(ICategoryRepository categoryRepository,string data)
+    {
+        counter++;
+        Console.WriteLine($"Object created: {counter}");
+        _categoryRepository = categoryRepository;   
+    }
+
+    //Setup in Configure Dependencies
+    services.AddScoped<ICustomerBL>(provider =>
+    {
+        var catRepo = provider.GetService<ICategoryRepository>();
+        return new CustomerBL(catRepo, "test data");
+    });
+
+  ```
+  - GetService and GetRequiredService are the same except GetRequiredService will give error if the object is null
+  - ![alt text](image-8.png)
+  - If we have some state issues use Transient rather than Scoped. Transient doesn't maintain any state.
+  - AddScoped() is stateful and AddTransient() is stateless.
+  
+## DB First Approach 
+- In EFCore we dont have edmx like it used to exist earlier in Entity Framework.
+- There is no edmx it only helps to generate the same code as Code First approach.
+- DB First is also called Reverse Engineering. 
+- Use this command 
+- Scaffold-DbContext <ConnectionString> Microsoft.EntityFrameworkCore.SqlServer -ContextDir <NameOfDirWhereContextClassWillSave> -OutputDir <NameOfDirWhereModelsClassesWillSave>
+- Data Modeling using 2 ways 
+  1. Data Annotations 
+  2. Fluent API(using OnModelCreating and specify constraints and relationships like HasKey, OneToMany)
+  3. ![alt text](image-9.png)
+- We can use an VS Extension: EFCore Power Tools 
+- ![alt text](image-10.png)
+- ![alt text](image-11.png)
+- ![alt text](image-12.png)
+- ![alt text](image-13.png)
+- ![alt text](image-14.png)
+- We can choose whether to use Data Annotations or Fluent API
+- Model First Approach is not available in EFCore.
+- We can use Script-Migration command to generate a sql script to generate the database and run it on the server.
+- Just make sure all Entity Framework packages use version 8.0.11
+- We can also use Script-Migration -from <migration_name> -to <migration_name> to just generate the sql script between 2 specific migrations.
+- In Db first approach we have 2 options: one is to use scaffold command or using ef core power tools extension or using cli command.
 - 

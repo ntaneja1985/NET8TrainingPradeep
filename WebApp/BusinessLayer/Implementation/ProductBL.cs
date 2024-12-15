@@ -14,10 +14,12 @@ namespace BusinessLayer.Implementation
     public class ProductBL : IProductBL
     {
         private readonly IProductRepository _productRepo;
+        private readonly ICustomerBL _customerBL;
 
-        public ProductBL(IProductRepository productRepository)
+        public ProductBL(IProductRepository productRepository, ICustomerBL customerBL)
         {
             _productRepo = productRepository;
+            _customerBL = customerBL;
         }
         public bool AddProduct(ProductViewModel product)
         {

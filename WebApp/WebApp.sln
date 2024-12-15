@@ -16,7 +16,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Repositories", "Repositorie
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BusinessLayer", "BusinessLayer\BusinessLayer.csproj", "{F7D4A2C9-6719-43CA-A638-65BC59446307}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\ViewModels.csproj", "{A67234E3-EBEB-4A5F-A31B-C9B4FAE87BAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ViewModels", "ViewModels\ViewModels.csproj", "{A67234E3-EBEB-4A5F-A31B-C9B4FAE87BAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DBFirstApproach", "DBFirstApproach\DBFirstApproach.csproj", "{40C25177-28AC-43D0-83D5-ADF47A241CAD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{A67234E3-EBEB-4A5F-A31B-C9B4FAE87BAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A67234E3-EBEB-4A5F-A31B-C9B4FAE87BAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A67234E3-EBEB-4A5F-A31B-C9B4FAE87BAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40C25177-28AC-43D0-83D5-ADF47A241CAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40C25177-28AC-43D0-83D5-ADF47A241CAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40C25177-28AC-43D0-83D5-ADF47A241CAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40C25177-28AC-43D0-83D5-ADF47A241CAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

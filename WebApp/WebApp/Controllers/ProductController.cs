@@ -12,11 +12,13 @@ namespace WebApp.Controllers
     {
         private readonly IProductBL _productBL;
         private readonly ICategoryBL _categoryBL;
+        private readonly ICustomerBL _customerBL;
 
-        public ProductController(IProductBL productBL, ICategoryBL categoryBL)
+        public ProductController(IProductBL productBL, ICategoryBL categoryBL, ICustomerBL customerBL)
         {
             _productBL = productBL;   
             _categoryBL = categoryBL;
+            _customerBL = customerBL;
 
         }
         private static List<ProductViewModel> products = new List<ProductViewModel>()
