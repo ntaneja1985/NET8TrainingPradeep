@@ -14,7 +14,9 @@ namespace WebApp.Controllers
         private readonly ICategoryBL _categoryBL;
         private readonly ICustomerBL _customerBL;
 
-        public ProductController(IProductBL productBL, ICategoryBL categoryBL, ICustomerBL customerBL)
+        public ProductController(IProductBL productBL, ICategoryBL categoryBL, 
+            //[FromKeyedServices("v2")] 
+        ICustomerBL customerBL)
         {
             _productBL = productBL;   
             _categoryBL = categoryBL;

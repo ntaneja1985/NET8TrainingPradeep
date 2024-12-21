@@ -975,9 +975,11 @@ catch (Exception ex)
 - We will have separate Business Layer and another project for the Models(ViewModels)
 - Controllers will talk to Business Layer and Business Layer will talk to Repository Layer which in turn talks to Data Access Layer
 - If we click on a Link we cant do a Delete, when we click on a link <a></a> it would do a HttpGet request. To make HttpDelete request, use AJAX
-
+## In EFCore if want to exclude data at the global level, we can also use Global Query Filters.
 
 ## Dependency Injection
+- Software Design principle that transfer the control of object creation to an external source.
+- This is done to promote loose coupling.
 - Design Pattern to inject the dependent object rather than create the object inside the class. 
 - Instead of creating concrete objects inside class, we should be injecting objects
 - Implements the dependency inversion principle. 
@@ -1065,6 +1067,23 @@ public ProductController(IProductBL productBL, ICategoryBL categoryBL)
   - ![alt text](image-8.png)
   - If we have some state issues use Transient rather than Scoped. Transient doesn't maintain any state.
   - AddScoped() is stateful and AddTransient() is stateless.
+
+## Keyed Services in ASP.NET Core
+- Lets say an interface has 2 implementations, ICustomerBL is implemented by CustomerBL and CustomerV2BL
+```c#
+  services.AddKeyedScoped<ICustomerBL, CustomerBL>("v1");
+  services.AddKeyedScoped<ICustomerBL, CustomerV2BL>("v2");
+
+
+  public ProductController(IProductBL productBL, ICategoryBL categoryBL, [FromKeyedServices("v2")] ICustomerBL customerBL)
+{
+    _productBL = productBL;   
+    _categoryBL = categoryBL;
+    _customerBL = customerBL;
+
+}
+
+```
   
 ## DB First Approach 
 - In EFCore we dont have edmx like it used to exist earlier in Entity Framework.
@@ -1088,4 +1107,200 @@ public ProductController(IProductBL productBL, ICategoryBL categoryBL)
 - Just make sure all Entity Framework packages use version 8.0.11
 - We can also use Script-Migration -from <migration_name> -to <migration_name> to just generate the sql script between 2 specific migrations.
 - In Db first approach we have 2 options: one is to use scaffold command or using ef core power tools extension or using cli command.
-- 
+
+## Multiple appsettings for different environments 
+- We can have multiple appsettings file like appsettings.development.json or appsettings.qa.json 
+- We then need to register it in Program.cs like this 
+```c#
+var env = Environment.GetEnvironmentVariable("MyEnv");
+if(env == null)
+{
+    throw new Exception("MyEnv configuration is not set");
+}
+
+
+ builder.Configuration.AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("MyEnv").ToLower()}.json", optional: false);
+
+```
+- We can define the environments in launchSettings.json 
+- We can define various environment variables in launchSettings.json 
+- Please note launchSettings.json is only for local development, in production we have a different way of defining our environment variables.
+- Go to Edit System Environment Variables.
+- In ASP.NET MVC we also have a tag helper on basis of which we can switch the environment variables.
+- ![alt text](image-16.png)
+- By default it uses ASPNETCORE_ENVIRONMENT
+
+## ASPNETCORE Middleware
+- It is a function or software component that is executed before and after the request and response is processed. 
+- ![alt text](image-17.png)
+- Types of Middleware: 
+- Use() -> Execute each middleware and delegate to the next, 
+- Map() -> Create Branch, 
+- Run() -> Terminates the middleware, No other middleware will be executed after Run(), it will start reverse flow.
+- It executes from top to bottom one by one.
+- Middleware executes the logic and passes the context to next middleware 
+- Run() terminates the pipeline and then it executes in reverse once response is sent.
+```c#
+
+//custom middleware example
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("a middleware: start");
+    await next();
+    Console.WriteLine("a middleware: end");
+});
+
+app.Use(async (context, next) =>
+{
+    Console.WriteLine("b middleware: start");
+    await next();
+    Console.WriteLine("b middleware: end");
+});
+
+```
+- ![alt text](image-18.png)
+- Middlewares are ended when it encounters a Run(). 
+- Any middleware written after Run() is never executed. 
+- app.UseDeveloperExceptionPage(); --> This middleware gives full error, we should have some logic to say that if the environment is production, this error is not displayed.
+- app.UseHttpsRedirection(); -->Converts http request to https one. 
+- app.UseStaticFiles() --> used to render and download the files in wwwroot folder , we can run angular and react apps from here.
+- Map() creates a separate branching in our pipeline. We can create a different pipeline which can then have a Run() method to stop the pipeline.
+- ![alt text](image-19.png)
+- We can also use MapGet() to define Minimal APIs 
+```c#
+//This is a separate branch altogether
+app.MapGet("/hello", () =>
+{
+    return "Hello from me";
+};
+app.Run();
+);
+
+app.MapGet("/getmyname/{id}", (string id) =>
+{
+    return "Hello from me" + id;
+});
+
+app.MapGet("/product/list", (IProductBL productBL) =>
+{
+    return productBL.GetAllProducts();
+});
+```
+
+## Short Circuit Middleware 
+- If we do this 
+```c#
+app.MapGet("/hello", () =>
+{
+    return "Hello from me";
+}).ShortCircuit();
+```
+- If we use ShortCircuit() method it will skip all other middlewares and directly execute this function. Will make our functions really fast.
+
+## Custom Middleware 
+```c#
+
+public class RequestLoggingMiddleware
+{
+    private readonly RequestDelegate _next;
+
+    public RequestLoggingMiddleware(RequestDelegate next)
+    {
+        _next = next;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        // Log the request information
+        Console.WriteLine($"Request: {context.Request.Method} {context.Request.Path}");
+
+        // Call the next middleware in the pipeline
+        await _next(context);
+
+        // Log the response information
+        Console.WriteLine($"Response: {context.Response.StatusCode}");
+    }
+}
+
+
+
+```
+
+- We can register it in Program.cs as follows 
+```c#
+// Register the custom middleware 
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+```
+- RequestDelegate: Represents a function that can process an HTTP request.
+
+- InvokeAsync: The method that processes the request. The HttpContext parameter provides access to the request and response objects.
+
+- _next: A delegate to the next middleware in the pipeline. Calling _next(context) passes control to the next middleware.
+### Use Cases for Custom Middleware
+- Logging: Log requests and responses for auditing and debugging.
+
+- Authentication: Validate authentication tokens or API keys.
+
+- Error Handling: Catch and handle exceptions, returning custom error responses.
+
+- Caching: Implement caching mechanisms for certain endpoints.
+
+- Custom Headers: Add or modify HTTP headers.
+
+- We can use Sessions like this 
+```c#
+builder.Services.AddSession(config =>
+{
+    config.IdleTimeout = TimeSpan.FromMinutes(20);
+});
+
+app.UseSession();
+
+```
+
+## Conditional Middleware 
+- MapWhen() in ASP.NET Core is a middleware component used to conditionally branch the request pipeline based on a specified predicate. 
+- This is useful when you want to execute different middleware based on certain conditions, such as the request path, headers, or query parameters.
+- How MapWhen Works
+- Predicate: You provide a function that takes an HttpContext and returns a bool. If the function returns true, the middleware branch will be executed.
+- Branching: You can configure separate middleware for each branch.
+```c#
+ public class Startup
+{
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        // Branch the pipeline when the request path starts with /api
+        app.MapWhen(context => context.Request.Path.StartsWithSegments("/api"), appBuilder =>
+        {
+            appBuilder.Use(async (context, next) =>
+            {
+                // Custom middleware logic for API paths
+                Console.WriteLine("Handling API request");
+                await next.Invoke();
+            });
+        });
+
+        app.UseRouting();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    }
+}
+
+
+```
+- Predicate: context.Request.Path.StartsWithSegments("/api") is the predicate function that checks if the request path starts with /api.
+- Branch Middleware: Inside the MapWhen block, you define middleware that only runs when the predicate is true.
+- Practical Use Cases
+- API Versioning: Direct API requests to different versions of the API.
+- Feature Flags: Enable or disable certain features based on conditions.
+- Custom Logging or Metrics: Apply custom logging for specific request paths or conditions.
+- Using MapWhen allows you to create more flexible and modular middleware configurations in your ASP.NET Core application.

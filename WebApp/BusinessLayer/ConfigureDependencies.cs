@@ -26,11 +26,18 @@ namespace BusinessLayer
             services.AddScoped<IProductBL, ProductBL>();
             services.AddScoped<ICategoryBL, CategoryBL>();
             //services.AddScoped<ICustomerBL, CustomerBL>();
-            services.AddScoped<ICustomerBL>(provider =>
+            services.AddScoped<ICustomerBL>( provider =>
             {
                 var catRepo = provider.GetRequiredService<ICategoryRepository>();
                 return new CustomerBL(catRepo, "test data");
             });
+            //services.AddKeyedScoped<ICustomerBL>("v2",provider =>
+            //{
+            //    var catRepo = provider.GetRequiredService<ICategoryRepository>();
+            //    return new CustomerV2BL(catRepo, "test data");
+            //});
+            //services.AddKeyedScoped<ICustomerBL, CustomerBL>("v1");
+            //services.AddKeyedScoped<ICustomerBL, CustomerV2BL>("v2");
 
             //services.AddScoped<DemoDbContext>();
             services.AddDbContext<DemoDbContext>(option =>
