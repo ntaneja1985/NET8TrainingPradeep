@@ -1070,6 +1070,7 @@ public ProductController(IProductBL productBL, ICategoryBL categoryBL)
 
 ## Keyed Services in ASP.NET Core
 - Lets say an interface has 2 implementations, ICustomerBL is implemented by CustomerBL and CustomerV2BL
+- We can also have KeyedTransient and KeyedSingleton
 ```c#
   services.AddKeyedScoped<ICustomerBL, CustomerBL>("v1");
   services.AddKeyedScoped<ICustomerBL, CustomerV2BL>("v2");
@@ -1157,6 +1158,24 @@ app.Use(async (context, next) =>
     Console.WriteLine("b middleware: end");
 });
 
+//Starts a new pipeline
+app.Map("/test", mappedMap =>
+{
+    mappedMap.Use(async (context, next) =>
+    {
+        Console.WriteLine("Middleware before test");
+        await context.Response.WriteAsync("Hello from the test");
+        await next();
+        Console.WriteLine("Middleware after the test");
+    });
+
+    mappedMap.Run(async context =>
+    {
+        Console.WriteLine("Terminated Middleware");
+        await Task.CompletedTask;
+    });
+});
+
 ```
 - ![alt text](image-18.png)
 - Middlewares are ended when it encounters a Run(). 
@@ -1166,6 +1185,7 @@ app.Use(async (context, next) =>
 - app.UseStaticFiles() --> used to render and download the files in wwwroot folder , we can run angular and react apps from here.
 - Map() creates a separate branching in our pipeline. We can create a different pipeline which can then have a Run() method to stop the pipeline.
 - ![alt text](image-19.png)
+- ![alt text](image-20.png)
 - We can also use MapGet() to define Minimal APIs 
 ```c#
 //This is a separate branch altogether
@@ -1304,3 +1324,8 @@ app.UseSession();
 - Feature Flags: Enable or disable certain features based on conditions.
 - Custom Logging or Metrics: Apply custom logging for specific request paths or conditions.
 - Using MapWhen allows you to create more flexible and modular middleware configurations in your ASP.NET Core application.
+
+
+
+## JWT Authentication
+- Used for authentication and authorization

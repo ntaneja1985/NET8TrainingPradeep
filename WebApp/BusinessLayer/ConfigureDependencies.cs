@@ -25,6 +25,8 @@ namespace BusinessLayer
             
             services.AddScoped<IProductBL, ProductBL>();
             services.AddScoped<ICategoryBL, CategoryBL>();
+            services.AddScoped<IUserBL, UserBL>();
+            services.AddScoped<IUserRepository,UserRepository>();
             //services.AddScoped<ICustomerBL, CustomerBL>();
             services.AddScoped<ICustomerBL>( provider =>
             {

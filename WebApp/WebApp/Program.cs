@@ -68,7 +68,22 @@ app.MapGet("/getmyname/{id}", (string id) =>
     return "Hello from me" + id;
 });
 
-app.uS
+app.Map("/test", mappedMap =>
+{
+    mappedMap.Use(async (context, next) =>
+    {
+        Console.WriteLine("Middleware before test");
+        await context.Response.WriteAsync("Hello from the test");
+        await next();
+        Console.WriteLine("Middleware after the test");
+    });
+
+    mappedMap.Run(async context =>
+    {
+        Console.WriteLine("Terminated Middleware");
+        await Task.CompletedTask;
+    });
+});
 //app.MapGet("/health", ():IResult =>
 //{
 //    return Status;
