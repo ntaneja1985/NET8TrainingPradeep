@@ -11,5 +11,7 @@ namespace BusinessLayer.Abstraction
     public interface IUserBL
     {
        UserViewModel ValidateUser(LoginViewModel loginViewModel);
+       
+       string GenerateToken(UserViewModel userViewModel);
     }
 }

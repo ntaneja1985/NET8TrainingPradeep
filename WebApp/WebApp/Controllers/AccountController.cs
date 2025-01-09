@@ -1,6 +1,10 @@
 using BusinessLayer.Abstraction;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using ViewModels;
 using WebApp.Models;
 
@@ -20,14 +24,27 @@ namespace WebApp.Controllers
             if (ModelState.IsValid)
             {
                 UserViewModel loggedInUser = userBL.ValidateUser(loginViewModel);
-                if (loggedInUser != null && !string.IsNullOrEmpty(loggedInUser.EmailId))
+                if (!string.IsNullOrEmpty(loggedInUser.EmailId))
                 {
-                    RedirectToAction("Create", "Product");
+                    string token = userBL.GenerateToken(loggedInUser);
+                    HttpContext.Response.Cookies.Append("AuthToken", token);
+                    return RedirectToAction("Create", "Product");
                 }
                
             }
             ViewBag.InvalidUser = "Invalid email and password. Try again";
             return View("Index");
+        }
+
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
+
+        public IActionResult Logout()
+        {
+            HttpContext.Response.Cookies.Delete("AuthToken");
+            return RedirectToAction("Login");
         }
     }
 }

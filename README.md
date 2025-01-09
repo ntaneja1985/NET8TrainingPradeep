@@ -1329,3 +1329,483 @@ app.UseSession();
 
 ## JWT Authentication
 - Used for authentication and authorization
+- JWT-->Json Web Token
+- Self contained to store info needed for authentication and authorization within itself
+- JSON format is transmitted over network making it better in performance
+- Data is in JSON format for compact and secure as well.
+- Data is secure and tamper proof as signed by crytographic signing. 
+- Cross Platform
+- Flexible with Roles, Claims and Permission and Expiration.
+- Creation: The server generates a JWT after the user successfully logs in. The server's secret key is used to sign the token, which ensures that the token's data can't be tampered with.
+- Transmission: The JWT is sent to the client and is typically stored in localStorage or a cookie.
+- Usage: For each subsequent request, the client sends the JWT in the HTTP header using the Bearer schema:
+- Stateless: The server doesn't need to store a session for the client; everything the server needs is in the token itself.
+- Compact: JWTs are small enough to be sent via URL, POST parameter, or inside an HTTP header.
+- ![alt text](image-22.png)
+- We will have the following settings in appsettings.json
+  ```c#
+  {
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "conn": "Data Source=localhost;Initial Catalog=questponddb;Integrated Security=True;TrustServerCertificate=True;"
+  },
+  "JwtSettings": {
+    "Issuer": "www.abc.com",
+    "Audience": "www.abc.com",
+    "SecretKey": "YourSuperSecretKey"
+    }
+    }
+
+
+  ```
+  - We will create a JwtMiddleware to validate the incoming token
+  - We will use the JwtSecurityTokenHandler class to validate the token.
+  - There are 2 types of cookies: Persistent Cookies and Non-Persistent cookies 
+  - We can pass the role as a claim type inside the JWT Token
+  - To verify the role, we can add the following code inside Program.cs 
+  - ![alt text](image-24.png)
+  - ![alt text](image-25.png)
+  - ![alt text](image-26.png)
+  - In Web.Api we dont use cookies to send data. There we will pass the JWT Token in the Authorization Bearer Header.
+  
+## Open ID Connect 
+- OpenID Connect (OIDC) is an identity layer built on top of the OAuth 2.0 protocol, designed to provide a simple and secure way to authenticate users and obtain their identity information. 
+- It allows clients (such as web and mobile applications) to verify the identity of an end-user and obtain basic profile information in a standardized and interoperable manner.
+- User Authentication: Provides a way for applications to authenticate users via an identity provider (IdP).
+- Interoperability: Standardized protocols and endpoints ensure compatibility across different identity providers and applications.
+- Claims: Uses JWT (JSON Web Token) to securely transmit claims about the user, such as their name, email, and other profile information.
+- Authorization Code Flow: Supports a secure way to obtain both access tokens and ID tokens using authorization code flow.
+- Authorization Request: The client application redirects the user to the identity provider's authorization endpoint, requesting authentication.
+- User Authentication: The user authenticates with the identity provider (e.g., by logging in).
+- Authorization Code: Upon successful authentication, the identity provider redirects the user back to the client application with an authorization code.
+- Token Exchange: The client application exchanges the authorization code for an ID token and an access token by making a request to the identity provider's token endpoint.
+- ID Token: The ID token contains information about the authenticated user, such as their identity and profile claims, and is used by the client application to verify the user's identity.
+- Setting up Open ID Connect in an ASP.NET Core application using authentication middleware can be done as follows:
+  ```c#
+  public void ConfigureServices(IServiceCollection services)
+  {
+    services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddOpenIdConnect(options =>
+    {
+        options.Authority = "https://your-identity-provider.com";
+        options.ClientId = "your-client-id";
+        options.ClientSecret = "your-client-secret";
+        options.ResponseType = "code";
+        options.SaveTokens = true;
+
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+
+        options.GetClaimsFromUserInfoEndpoint = true;
+    });
+
+     services.AddControllersWithViews();
+  }
+
+   public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+   {
+     if (env.IsDevelopment())
+     {
+         app.UseDeveloperExceptionPage();
+     }
+
+     app.UseRouting();
+     app.UseAuthentication();
+     app.UseAuthorization();
+     app.UseEndpoints(endpoints =>
+     {
+         endpoints.MapDefaultControllerRoute();
+     });
+  }
+
+  ```
+## Configuring Jwt Based Authentication and Authorization in the Application
+
+- Step 1: Adding the Authentication and Authorization Services in the Program.cs file
+```c#
+  builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,
+    options =>
+    {
+        options.Cookie.Name = "AuthToken";
+        options.LoginPath = new PathString("/account/login");
+        options.AccessDeniedPath = new PathString("/account/accessdenied");
+    });
+
+  builder.Services.AddAuthorization(options =>
+ {
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireUser", policy => policy.RequireRole("User"));
+ });
+
+```
+- Step 2: In the Account Controller, if the user successfully logs in with his username password, then generate a token and set the token inside the cookie like this:
+
+```c#
+//Code to generate token
+public string GenerateToken(UserViewModel userVM)
+{
+    var jwtSettings = _configuration.GetSection("JwtSettings");
+    var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? "");
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.Name, userVM.FullName),
+        new Claim(ClaimTypes.Email, userVM.EmailId),
+        new Claim(ClaimTypes.Role, userVM.Role)
+    };
+
+    var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
+
+    //parameters to generate the token
+    var token = new JwtSecurityToken(
+        issuer: jwtSettings["Issuer"],
+        audience: jwtSettings["Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddSeconds(5),
+        signingCredentials: credentials
+    );
+
+    return new JwtSecurityTokenHandler().WriteToken(token);
+}
+
+
+//Using the above code inside the Account Controller on the Login Post Action Method
+
+[HttpPost]
+public IActionResult Login(LoginViewModel loginViewModel)
+{
+    if (ModelState.IsValid)
+    {
+        UserViewModel loggedInUser = _userBL.ValidateUser(loginViewModel);
+        if (loggedInUser != null)
+        {
+            string token = _userBL.GenerateToken(loggedInUser);
+            HttpContext.Response.Cookies.Append("AuthToken", token);
+            return RedirectToAction("Create", "Product");
+        }
+    }
+    ViewBag.InvalidUser = "Invalid emailid & password.Try again";
+    return View("Index");
+}
+
+```
+
+- Step 3: Validate the Token inside the JwtMiddleware i.e Create a separate middleware to validate incoming tokens 
+```c#
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WebApp.Custom
+{
+    // You may need to install the Microsoft.AspNetCore.Http.Abstractions package into your project
+    public class JwtMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly IConfiguration _configuration;
+
+        public JwtMiddleware(RequestDelegate next, IConfiguration configuration)
+        {
+            _next = next;
+            _configuration = configuration;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            var token = context.Request.Cookies["AuthToken"];
+
+            if (token != null)
+            {
+                try
+                {
+                    var jwtSettings = _configuration.GetSection("JwtSettings");
+                    var key = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]);
+
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var parameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(key)
+                    };
+
+                    var principal = tokenHandler.ValidateToken(token, parameters, out var validatedToken);
+                    context.User = principal; // Populate HttpContext.User
+                }
+                catch
+                {
+                    // If token validation fails, clear the cookie &this will redirect to login page
+                    context.Response.Cookies.Delete("AuthToken");
+                }
+            }
+
+            await _next(context);
+        }
+    }
+
+
+    // Extension method used to add the middleware to the HTTP request pipeline.
+    public static class JwtMiddlewareExtensions
+    {
+        public static IApplicationBuilder UseJwtMiddleware(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<JwtMiddleware>();
+        }
+    }
+}
+
+
+
+```
+
+- Step 4: Call this Middleware from inside Program.cs like this:
+
+```c#
+app.UseAuthentication();
+
+app.UseJwtMiddleware();
+
+app.UseAuthorization();
+
+```
+
+
+  ### Potential Downsides of using OIDC
+  - Additional Requests: OIDC introduces additional network requests for token exchange, user information retrieval, and token validation. This can add latency to the authentication process.
+  - Session Management: Managing user sessions and token lifecycles can introduce performance overhead on both the client and server sides.
+  
+## WebAPI
+- REST 
+- Representational State Transfer 
+- Earlier we used to have SOAP format, before that Webservices(ASMX)
+- We used to have WCF also.
+- WCF had the concept of ABC(Address Binding Contract). There was wsHttpBinding for REST Services 
+- REST is an architectural style for designing services that can communicate between different systems.
+### REST has some principles:
+- Addressable Resource(each resource should have a URL)
+- Every resource should be simple and uniform (Leverage HTTP methods like GET,PUT,POST,DELETE) 
+- Representation Oriented (Representation of resource can be in any format like XML, JSON)
+- Communication is stateless.(HTTP itself is a stateless protocol). No session is maintained on the server
+- Cacheable: Client should be able to cache the response for future use.
+
+### All the above principles are followed by WebAPI. That is why WebAPI follows REST based architecture.
+- Remember SOAP was very verbose, REST is lightweight.
+
+### Content Negotiation
+- Process of selecting the best representation of response. 
+- JSON is default representation format.
+- Provide Accept header with values like "application/json" or "application/xml".
+- Content negotiation in WebAPI is a mechanism that allows clients and servers to agree on the most appropriate format for the response content. This process ensures that clients receive data in the format they prefer, such as JSON, XML, or other media types.
+- 1. Accept Header:
+- The client specifies the desired response format using the Accept header in the HTTP request. For example, a client can request JSON or XML by setting the Accept header to application/json or application/xml, respectively.
+- Content-Type Header:
+- The server indicates the format of the response using the Content-Type header in the HTTP response.
+- MediaTypeFormatters:
+- ASP.NET Core WebAPI uses MediaTypeFormatters to handle serialization and deserialization of data. By default, ASP.NET Core supports JSON and XML formatters.
+- Configuring Formatters:
+- You can configure formatters in the Startup.cs file to support different media types.
+- Configure JSON and XML Formatters
+- In your Startup.cs file, you can configure the formatters in the ConfigureServices method:
+```c#
+ public void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllers(options =>
+    {
+        // Remove the default JSON formatter
+        options.OutputFormatters.RemoveType<SystemTextJsonOutputFormatter>();
+
+        // Add JSON and XML formatters
+        options.OutputFormatters.Add(new NewtonsoftJsonOutputFormatter(new JsonSerializerSettings(), ArrayPool<char>.Shared, new MvcOptions()));
+        options.OutputFormatters.Add(new XmlSerializerOutputFormatter());
+    })
+    .AddNewtonsoftJson(); // For JSON serialization
+}
+
+```
+- This can also be done like this 
+  ```c#
+    builder.Services.AddControllers()
+    .AddXmlSerializerFormatters()
+    .AddXmlDataContractSerializerFormatters();
+  ```
+  ### We can force data to be returned by a method in a specific format using Produces() annotation 
+  ```c#
+   [Produces("application/json")]
+   [Route("getall")]
+
+    public IActionResult GetAllProducts()
+    {
+    var products = _productBL.GetAllProducts();
+    //return Ok(products);
+    return StatusCode(StatusCodes.Status200OK, products);
+    }
+  ```
+  ### To restrict to get information only from body of the request and not from querystring we can use [FromBody]
+```c#
+   [HttpPost]
+ [Route("add")]
+ public IActionResult AddProduct([FromBody] ProductViewModel productVM)
+ {
+     var isAdded = _productBL.AddProduct(productVM);
+     if (isAdded)
+     {
+         return StatusCode(StatusCodes.Status201Created, isAdded);
+     }
+     else
+     {
+         return StatusCode(StatusCodes.Status404NotFound, isAdded);
+     }
+ }
+```
+- We can specify the response type also
+```c#
+ [HttpGet]
+[Route("get/{id}")]
+[ProducesResponseType(StatusCodes.Status200OK)]
+public IActionResult GetById(int id)
+{
+    var product = _productBL.GetProductById(id);
+    //return Ok(products);
+    return StatusCode(StatusCodes.Status200OK, product);
+}
+
+
+```
+
+### We can configure JSONOptions also like this 
+```c#
+  builder.Services.AddControllers()
+    .AddXmlSerializerFormatters()
+    .AddXmlDataContractSerializerFormatters()
+    .AddJsonOptions(option =>
+    {
+        option.JsonSerializerOptions.PropertyNamingPolicy = null;
+    });
+```
+
+- Content negotiation in WebAPI allows clients to specify their preferred response format using the Accept header. 
+- The server uses MediaTypeFormatters to serialize the response in the appropriate format. 
+- By configuring formatters and handling content negotiation properly, you can build flexible and interoperable APIs that cater to various client preferences.
+
+## API Versioning
+- Version using querystring 
+- Version using Headers 
+- Version using MediaType 
+  
+- Install Nuget package :
+```shell
+  Install-Package Microsoft.AspNetCore.Mvc.Versioning
+```
+- Configure versioning in Program.cs like this 
+```c#
+ public void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllers();
+
+    services.AddApiVersioning(options =>
+    {
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = ApiVersionReader.Combine(
+            new QueryStringApiVersionReader("api-version"),
+            new HeaderApiVersionReader("x-api-version"),
+            new MediaTypeApiVersionReader("v"));
+    });
+}
+
+
+```
+- Inside controllers we can do this 
+```c#
+//Version 1
+
+[ApiController]
+[Route("api/v{version:apiVersion}/values")]
+[ApiVersion("1.0")]
+public class ValuesV1Controller : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get()
+    {
+        return Ok(new { Message = "This is version 1.0" });
+    }
+}
+
+//Version 2
+[ApiController]
+[Route("api/v{version:apiVersion}/values")]
+[ApiVersion("2.0")]
+public class ValuesV2Controller : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get()
+    {
+        return Ok(new { Message = "This is version 2.0" });
+    }
+}
+
+
+
+```
+- Clients can access different versions of your API using query strings, headers, or media types, depending on how you've configured the ApiVersionReader.
+- Using querystring: 
+  ```shell
+  GET /api/v1.0/values?api-version=1.0
+  GET /api/v2.0/values?api-version=2.0
+
+  ```
+- Using headers 
+```c#
+  GET /api/v1.0/values
+ Header: x-api-version: 1.0
+
+ GET /api/v2.0/values
+ Header: x-api-version: 2.0
+
+```
+- Using Media Type 
+```c#
+ GET /api/v1.0/values
+Header: Accept: application/json; v=1.0
+
+GET /api/v2.0/values
+Header: Accept: application/json; v=2.0
+
+```
+- We can mark Api versions as deprecated as follows :
+```c#
+ [ApiController]
+[Route("api/v{version:apiVersion}/values")]
+[ApiVersion("1.0")]
+[ApiVersion("1.0", Deprecated = true)]
+public class ValuesV1Controller : ControllerBase
+{
+    [HttpGet]
+    public IActionResult Get()
+    {
+        return Ok(new { Message = "This is version 1.0 (Deprecated)" });
+    }
+}
+
+
+```

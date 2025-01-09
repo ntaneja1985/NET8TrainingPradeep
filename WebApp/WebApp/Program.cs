@@ -1,7 +1,10 @@
 using BusinessLayer;
 using BusinessLayer.Abstraction;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using WebApp.Custom;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +23,25 @@ builder.Services.RegisterServices(builder.Configuration);
 builder.Services.AddSession(config =>
 {
     config.IdleTimeout = TimeSpan.FromMinutes(20);
+});
+
+builder.Services.AddSession(config =>
+{
+    config.IdleTimeout = TimeSpan.FromMinutes(10);
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme,options =>
+{
+    options.Cookie.Name = "AuthToken";
+    options.LoginPath = new PathString("/account/login");
+    options.AccessDeniedPath = new PathString("/account/accessdenied");
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireUser", policy => policy.RequireRole("User"));
 });
 
 var app = builder.Build();
@@ -43,7 +65,9 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 
-//app.UseAuthentication();
+app.UseAuthentication();
+
+app.UseJwtMiddleware();
 
 app.UseAuthorization();
 
