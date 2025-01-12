@@ -1,12 +1,15 @@
-﻿using BusinessLayer.Abstraction;
+﻿using Asp.Versioning;
+using BusinessLayer.Abstraction;
 using BusinessLayer.Implementation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ViewModels;
 
-namespace WebAPI.Controllers
+namespace WebAPI.V2.Controllers
 {
-    [Route("api/[controller]")]
+    [ApiVersion(2.0)]
+    [Route("api/v{version:apiVersion}/productapi")]
+    [Route("api/productapi")]
     [ApiController]
     public class ProductAPIV2Controller : ControllerBase
     {

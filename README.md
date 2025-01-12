@@ -1613,15 +1613,15 @@ app.UseAuthorization();
 ### Content Negotiation
 - Process of selecting the best representation of response. 
 - JSON is default representation format.
-- Provide Accept header with values like "application/json" or "application/xml".
+- Provide **Accept header with values like "application/json" or "application/xml".**
 - Content negotiation in WebAPI is a mechanism that allows clients and servers to agree on the most appropriate format for the response content. This process ensures that clients receive data in the format they prefer, such as JSON, XML, or other media types.
 - 1. Accept Header:
 - The client specifies the desired response format using the Accept header in the HTTP request. For example, a client can request JSON or XML by setting the Accept header to application/json or application/xml, respectively.
-- Content-Type Header:
+- **Content-Type Header**:
 - The server indicates the format of the response using the Content-Type header in the HTTP response.
-- MediaTypeFormatters:
+- **MediaTypeFormatters**:
 - ASP.NET Core WebAPI uses MediaTypeFormatters to handle serialization and deserialization of data. By default, ASP.NET Core supports JSON and XML formatters.
-- Configuring Formatters:
+- **Configuring Formatters**:
 - You can configure formatters in the Startup.cs file to support different media types.
 - Configure JSON and XML Formatters
 - In your Startup.cs file, you can configure the formatters in the ConfigureServices method:
@@ -1713,7 +1713,11 @@ public IActionResult GetById(int id)
   
 - Install Nuget package :
 ```shell
+  //Deprecated
   Install-Package Microsoft.AspNetCore.Mvc.Versioning
+
+  //Latest one
+  Install-Package Asp.Versioning.Mvc.ApiExplorer
 ```
 - Configure versioning in Program.cs like this 
 ```c#
@@ -1807,5 +1811,285 @@ public class ValuesV1Controller : ControllerBase
     }
 }
 
+
+```
+
+- To do versioning do these changes in Program.cs file like this 
+```c#
+
+builder.Services.AddApiVersioning()
+.AddMvc(options =>
+{
+    options.Conventions.Add(new VersionByNamespaceConvention());
+    options.Conventions.Controller<WebAPI.V1.Controllers.ProductAPIController>().HasApiVersion(1.0);
+    options.Conventions.Controller<WebAPI.V2.Controllers.ProductAPIV2Controller>().HasApiVersion(2.0);
+});
+
+```
+- Controllers will look like this 
+```c#
+
+namespace WebAPI.V2.Controllers
+{
+    [ApiVersion(2.0)]
+    [Route("api/v{version:apiVersion}/productapi")]
+    [Route("api/productapi")]
+    [ApiController]
+    public class ProductAPIV2Controller : ControllerBase
+    {
+        private readonly IProductBL _productBL;
+        public ProductAPIV2Controller(IProductBL productBL)
+        {
+            _productBL = productBL;
+        }
+
+
+        [Route("getall")]
+        [Produces("application/json")]
+        [HttpGet]
+        public IActionResult GetAllProducts()
+        {
+            var products = _productBL.GetAllProducts();
+            //return Ok(products);
+            return StatusCode(StatusCodes.Status200OK, products);
+        }
+
+        
+    }
+}
+
+
+namespace WebAPI.V1.Controllers
+{
+    [ApiVersion(1.0)]
+    [Route("api/v{version:apiVersion}/productapi")]
+    [Route("api/productapi")]
+    [ApiController]
+    
+    public class ProductAPIController : ControllerBase
+    {
+        private readonly IProductBL _productBL;
+        public ProductAPIController(IProductBL productBL)
+        {
+            _productBL = productBL;
+        }
+
+
+        [Route("getall")]
+        [Produces("application/json")]
+        [HttpGet]
+        public IActionResult GetAllProducts()
+        {
+            var products = _productBL.GetAllProducts();
+            //return Ok(products);
+            return StatusCode(StatusCodes.Status200OK, products);
+        }
+
+        [HttpPost]
+        [Route("add")]
+        public IActionResult AddProduct([FromBody] ProductViewModel productVM)
+        {
+            var isAdded = _productBL.AddProduct(productVM);
+            if (isAdded)
+            {
+                return StatusCode(StatusCodes.Status201Created, isAdded);
+            }
+            else
+            {
+                return StatusCode(StatusCodes.Status404NotFound, isAdded);
+            }
+        }
+
+        
+    }
+}
+
+
+
+```
+
+## Minimal APIs
+- We can write this code in Program.cs only 
+- This is usually for small apis which have no dependencies.
+- We can have a separate extension method for minimal apis and use them.
+
+```c#
+ app.MapGet("/getname/{id}", (string id) => $"Hello {id}");
+
+ app.MapGet("/list", (IProductBL productBL) => 
+GetAllProducts(productBL)).Accepts<List<ProductViewModel>>("application/json");
+
+ IResult GetAllProducts(IProductBL productBL)
+{
+    return Results.Ok(productBL.GetAllProducts());
+}
+```
+
+## JWT Authentication in WebAPI
+- Make this change in Program.cs file 
+```c#
+
+//Responsible for validating the JWT 
+ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer( config =>
+{
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    config.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+    };
+    
+   
+});
+
+```
+- Add an AuthAPIController.cs file 
+```c#
+ namespace WebAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthAPIController(IUserBL userBL, IConfiguration configuration) : ControllerBase
+    {
+
+        [HttpPost]
+        [Route("auth")]
+        public IActionResult Authenticate(LoginViewModel loginViewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                UserViewModel loggedInUser = userBL.ValidateUser(loginViewModel);
+                if (!string.IsNullOrEmpty(loggedInUser.EmailId))
+                {
+                    string token = userBL.GenerateToken(loggedInUser);
+                    return StatusCode(StatusCodes.Status200OK, new { message = "success", token = token });
+                }
+
+            }
+            return StatusCode(StatusCodes.Status400BadRequest, new { message = "failure" });
+        }
+
+    }
+}
+
+```
+- If inside the Authorize attribute, we specify the Role and the JWT token contains a different role, we will get a 403 Forbidden instead of 401 UnAuthorized
+- 401 Unauthorized status code is returned if the Bearer Token is not specified 
+- Claim is the payload we want in our token
+- JWT Token validation in WebAPI is done by the following code:
+```c#
+ //Responsible for validating the JWT 
+ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+.AddJwtBearer( config =>
+{
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    config.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+    };
+    
+   
+});
+
+```
+- In .NET 9 , swagger has been removed by default 
+- We now have a .http file which contains all the apis we have in our application.
+- We can use Endpoints Explorer in Visual Studio
+
+## Calling WebAPI from javascript 
+
+```c#
+  <script>
+
+     $(document).ready(function () {
+     loadProducts();
+
+     $('#btnSave').click(saveProduct);
+ });
+
+ function loadProducts(){
+     $.ajax({
+         url:'https://localhost:7126/api/v1.0/productapi/getall',
+         type: 'GET',
+         headers: {
+             "Authorization": "Bearer" + localStorage["token"]
+         },
+         success: (response) => {
+             var tbody = $('#tblProducts > tbody');
+             tbody.html('');
+             $.each(resp, (k, v) => {
+                 var tr = $('<tr></tr>');
+                 tr.append(`<td>${v.pid}</td>`);
+                 tr.append(`<td>${v.ProductName}</td>`);
+                 tr.append(`<td>${v.Price}</td>`);
+                 tr.appendTo(tbody);
+             });
+         },
+         error: (err) => {
+             console.log(err);
+         }
+     })
+ }
+
+ function saveProduct() {
+     let productToAdd = {
+         ProductName: $('#productName').val(),
+         ProductCode: $('#productCode').val(),
+         Price: $('#price').val(),
+             CategoryId: 1
+     };
+
+     $.ajax({
+         url: "https://localhost:7126/api/v1.0/productapi/add",
+         type: 'POST',
+         headers: {
+            "Authorization": "Bearer" + localStorage["token"],
+            "Content-Type": "application/json"
+         },
+         data: JSON.stringify(productToAdd),
+         success: (resp) => {
+             if(resp) {
+                 alert("Product Added");
+                 loadProducts();
+             }
+         },
+         error: (err) => {
+             console.log(err);
+         }
+     })
+ }
+</script>
+
+```
+- This will give a CORS issue. To fix it we will have to enable CORS in our webapi Program.cs file 
+```c#
+
+//Add a Service
+  builder.Services.AddCors(config =>
+{
+    config.AddPolicy("mypolicy", opt =>
+    {
+        opt.AllowAnyHeader();
+        //Url of web application which is calling this API
+        opt.WithOrigins("https://localhost:7066");
+        opt.AllowAnyMethod();
+    });
+});
+
+
+//Use Cors Policy
+app.UseCors("mypolicy")
 
 ```

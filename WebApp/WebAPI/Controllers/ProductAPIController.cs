@@ -1,13 +1,19 @@
-﻿using BusinessLayer.Abstraction;
+﻿using Asp.Versioning;
+using BusinessLayer.Abstraction;
 using BusinessLayer.Implementation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ViewModels;
 
-namespace WebAPI.Controllers
+namespace WebAPI.V1.Controllers
 {
-    [Route("api/[controller]")]
+    [ApiVersion(1.0)]
+    [Route("api/v{version:apiVersion}/productapi")]
+    [Route("api/productapi")]
     [ApiController]
+    [Authorize(Roles = "User")]
+
     public class ProductAPIController : ControllerBase
     {
         private readonly IProductBL _productBL;
